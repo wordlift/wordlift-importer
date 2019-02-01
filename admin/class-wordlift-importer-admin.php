@@ -147,60 +147,23 @@ class Wordlift_Importer_Admin {
 
 	}
 
+	/**
+	 * Process the `export` AJAX hook.
+	 *
+	 * @since 1.0.0
+	 */
 	public function export() {
 
-		if ( 'POST' === $_SERVER['REQUEST_METHOD'] ) {
-			set_time_limit( 900 );
-
-			header( 'Content-Description: File Transfer' );
-			header( 'Content-Disposition: attachment; filename=wordlift-export.tsv' );
-			header( 'Content-Type: text/tab-separated-values; charset=' . get_option( 'blog_charset' ), true );
-
-			$posts = get_posts( array(
-				'posts_per_page'         => - 1,
-				'cache_results'          => false,
-				'update_post_meta_cache' => false,
-				'update_post_term_cache' => false,
-				'post_type'              => $_POST['post_types'],
-				'post_status'            => 'any',
-			) );
-
-			$out = fopen( 'php://output', 'w' );
-
-			fputcsv( $out, array(
-				'post:permalink',
-				'post:post_content',
-				'postmeta:entity_same_as',
-				'postmeta:_wl_alt_label',
-				'thumbnail:url',
-			), "\t" );
-
-			/** @var WP_Post $post */
-			foreach ( $posts as $post ) {
-
-				$fields = array(
-					// Permalink.
-					get_permalink( $post->ID ),
-					// Post content.
-					$post->post_content,
-					// sameAs.
-					implode( ', ', get_post_meta( $post->ID, Wordlift_Schema_Service::FIELD_SAME_AS ) ),
-					// Synonyms.
-					implode( ', ', get_post_meta( $post->ID, Wordlift_Entity_Service::ALTERNATIVE_LABEL_META_KEY ) ),
-					// Thumbnail URL.
-					get_the_post_thumbnail_url( $post->ID ),
-				);
-
-				fputcsv( $out, $fields, "\t" );
-
-			}
-
-			fclose( $out );
-			wp_die();
-		}
+		$exporter = new Wordlift_Importer_Admin_Ajax_Export();
+		$exporter->process();
 
 	}
 
+	/**
+	 * Process the `import` AJAX hook.
+	 *
+	 * @since 1.0.0
+	 */
 	public function import() {
 
 		$importer = new Wordlift_Importer_Admin_Ajax_Import();
