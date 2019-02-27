@@ -31,6 +31,17 @@ class Wordlift_Importer_Admin_Ajax_Import {
 		// Skip the header line.
 		fgets( $handle );
 
+		$do_same_as       = 'yes' === filter_input( INPUT_POST, 'do_same_as' );
+		$do_alt_labels    = 'yes' === filter_input( INPUT_POST, 'do_alt_labels' );
+		$do_thumbnails    = 'yes' === filter_input( INPUT_POST, 'do_thumbnails' );
+		$do_content       = 'yes' === filter_input( INPUT_POST, 'do_content' );
+		$force_thumbnails = 'yes' === filter_input( INPUT_POST, 'force_thumbnails' );
+
+		echo( 'same_as: ' . ( $do_same_as ? 'yes' : 'no' ) . '<br/>' );
+		echo( 'alt_labels: ' . ( $do_alt_labels ? 'yes' : 'no' ) . '<br/>' );
+		echo( 'thumbnails: ' . ( $do_thumbnails ? 'yes' : 'no' ) . '<br/>' );
+		echo( 'content: ' . ( $do_content ? 'yes' : 'no' ) . '<br/>' );
+
 		while ( false !== ( $data = fgetcsv( $handle, 0, "\t" ) ) ) {
 
 			$debug = '';
@@ -51,7 +62,7 @@ class Wordlift_Importer_Admin_Ajax_Import {
 				continue;
 			}
 
-			if ( ! empty( $data[ Fields::SAME_ASS ] ) ) {
+			if ( $do_same_as && ! empty( $data[ Fields::SAME_ASS ] ) ) {
 				$debug  .= 'S';
 				$values = explode( ', ', $data[ Fields::SAME_ASS ] );
 				foreach ( $values as $value ) {
@@ -59,7 +70,7 @@ class Wordlift_Importer_Admin_Ajax_Import {
 				}
 			}
 
-			if ( ! empty( $data[ Fields::ALT_LABELS ] ) ) {
+			if ( $do_alt_labels && ! empty( $data[ Fields::ALT_LABELS ] ) ) {
 				$debug  .= 'L';
 				$values = explode( ', ', $data[ Fields::ALT_LABELS ] );
 				foreach ( $values as $value ) {
@@ -67,15 +78,15 @@ class Wordlift_Importer_Admin_Ajax_Import {
 				}
 			}
 
-			if ( ! empty( $data[ Fields::THUMBNAIL_URLS ] ) ) {
+			if ( $do_thumbnails && ! empty( $data[ Fields::THUMBNAIL_URLS ] ) ) {
 				$debug  .= 'I';
 				$values = explode( ', ', $data[ Fields::THUMBNAIL_URLS ] );
 				foreach ( $values as $value ) {
-					$this->set_post_image_from_url( $value, $post_id );
+					$this->set_post_image_from_url( $value, $post_id, $force_thumbnails );
 				}
 			}
 
-			if ( ! empty( $data[ Fields::POST_CONTENT ] ) ) {
+			if ( $do_content && ! empty( $data[ Fields::POST_CONTENT ] ) ) {
 				$debug .= 'C';
 				wp_update_post( array(
 					'ID'           => $post_id,
@@ -104,9 +115,9 @@ class Wordlift_Importer_Admin_Ajax_Import {
 		return add_post_meta( $post_id, $meta_key, $meta_value );
 	}
 
-	private function set_post_image_from_url( $url, $post_id ) {
+	private function set_post_image_from_url( $url, $post_id, $force = false ) {
 
-		if ( ! empty( get_post_thumbnail_id( $post_id ) ) ) {
+		if ( ! $force && ! empty( get_post_thumbnail_id( $post_id ) ) ) {
 			return false;
 		}
 
@@ -118,6 +129,8 @@ class Wordlift_Importer_Admin_Ajax_Import {
 		$image = Wordlift_Remote_Image_Service::save_from_url( $url );
 
 		if ( false === $image ) {
+			echo( "Error saving image from $url.<br/>" );
+
 			return false;
 		}
 
