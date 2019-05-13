@@ -16,7 +16,7 @@
  * Plugin Name:       WordLift Importer
  * Plugin URI:        https://wordlift.io
  * Description:       Exports and Imports WordLift data.
- * Version:           1.0.0
+ * Version:           1.2.0-dev
  * Author:            David Riccitelli
  * Author URI:        https://wordlift.io
  * License:           GPL-2.0+
@@ -35,7 +35,7 @@ if ( ! defined( 'WPINC' ) ) {
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'WORDLIFT_IMPORTER_VERSION', '1.1.0' );
+define( 'WORDLIFT_IMPORTER_VERSION', '1.2.0-dev' );
 
 /**
  * The code that runs during plugin activation.

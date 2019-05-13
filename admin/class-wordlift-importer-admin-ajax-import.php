@@ -6,116 +6,145 @@
  * Time: 11:50
  */
 
-abstract class Fields {
-	const PERMALINK = 0;
-	const POST_CONTENT = 1;
-	const SAME_ASS = 2;
-	const ALT_LABELS = 3;
-	const THUMBNAIL_URLS = 4;
-}
+abstract class Field_Names {
+	const PERMALINK = 'permalink';
+	const POST_CONTENT = 'content';
+	const SAME_AS = 'same_as';
+	const ALT_LABELS = 'alt_labels';
+	const THUMBNAILS = 'thumbnails';
+	const TITLE = 'title';
+	const URL = 'url';
+	const TYPE = 'type';
 
-class Wordlift_Importer_Admin_Ajax_Import {
+	public static $fields = array(
+		self::POST_CONTENT => 'do_post_content',
+		self::SAME_AS      => 'do_same_as',
+		self::ALT_LABELS   => 'do_alt_labels',
+		self::THUMBNAILS   => 'do_thumbnails',
+		self::TITLE        => 'do_title',
+		self::URL          => 'do_url',
+		self::TYPE         => 'do_type',
+	);
 
-	public function process() {
-
-		@set_time_limit( 900 );
-
-		// Start sending some data.
-		echo( 'starting...<br/>' );
-		ob_flush();
-
-		if ( false === ( $handle = fopen( $_FILES['file']['tmp_name'], 'r' ) ) ) {
-			wp_send_json_error( 'Cannot open the file.' );
+	public static function do_type( $header, $data, $post_id ) {
+		if ( 'yes' !== filter_input( INPUT_POST, 'do_' . self::TYPE ) ) {
+			return;
 		}
 
-		// Skip the header line.
-		fgets( $handle );
+		$values = explode( ', ', $header->get_field_value( Field_Names::TYPE, $data ) );
+		for ( $i = 0; $i < count( $values ); $i ++ ) {
+			Wordlift_Entity_Type_Service::get_instance()
+			                            ->set( $post_id, $values[ $i ], 0 === $i );
+		}
+	}
 
-		$do_same_as       = 'yes' === filter_input( INPUT_POST, 'do_same_as' );
-		$do_alt_labels    = 'yes' === filter_input( INPUT_POST, 'do_alt_labels' );
-		$do_thumbnails    = 'yes' === filter_input( INPUT_POST, 'do_thumbnails' );
-		$do_content       = 'yes' === filter_input( INPUT_POST, 'do_content' );
-		$force_thumbnails = 'yes' === filter_input( INPUT_POST, 'force_thumbnails' );
-
-		echo( 'same_as: ' . ( $do_same_as ? 'yes' : 'no' ) . '<br/>' );
-		echo( 'alt_labels: ' . ( $do_alt_labels ? 'yes' : 'no' ) . '<br/>' );
-		echo( 'thumbnails: ' . ( $do_thumbnails ? 'yes' : 'no' ) . '<br/>' );
-		echo( 'content: ' . ( $do_content ? 'yes' : 'no' ) . '<br/>' );
-
-		while ( false !== ( $data = fgetcsv( $handle, 0, "\t" ) ) ) {
-
-			$debug = '';
-
-			if ( strpos( $data[ Fields::PERMALINK ], 'http' ) ) {
-				echo( $data[ Fields::PERMALINK ] . ' not a valid URL.<br/>' );
-				continue;
-			}
-
-			// Remove the host.
-			$path    = preg_replace( '~^https?://[^/]+~', '', $data[ Fields::PERMALINK ], 1 );
-			$url     = home_url( $path );
-			$post_id = url_to_postid( $url );
-
-			// Skip post if not found.
-			if ( 0 === $post_id ) {
-				echo( $data[ Fields::PERMALINK ] . " not found.<br/>" );
-				continue;
-			}
-
-			if ( $do_same_as && ! empty( $data[ Fields::SAME_ASS ] ) ) {
-				$debug  .= 'S';
-				$values = explode( ', ', $data[ Fields::SAME_ASS ] );
-				foreach ( $values as $value ) {
-					$this->add_post_meta( $post_id, Wordlift_Schema_Service::FIELD_SAME_AS, $value );
-				}
-			}
-
-			if ( $do_alt_labels && ! empty( $data[ Fields::ALT_LABELS ] ) ) {
-				$debug  .= 'L';
-				$values = explode( ', ', $data[ Fields::ALT_LABELS ] );
-				foreach ( $values as $value ) {
-					$this->add_post_meta( $post_id, Wordlift_Entity_Service::ALTERNATIVE_LABEL_META_KEY, $value );
-				}
-			}
-
-			if ( $do_thumbnails && ! empty( $data[ Fields::THUMBNAIL_URLS ] ) ) {
-				$debug  .= 'I';
-				$values = explode( ', ', $data[ Fields::THUMBNAIL_URLS ] );
-				foreach ( $values as $value ) {
-					$this->set_post_image_from_url( $value, $post_id, $force_thumbnails );
-				}
-			}
-
-			if ( $do_content && ! empty( $data[ Fields::POST_CONTENT ] ) ) {
-				$debug .= 'C';
-				wp_update_post( array(
-					'ID'           => $post_id,
-					'post_content' => $data[ Fields::POST_CONTENT ],
-				) );
-			}
-
-			edit_post_link( $post_id, 'Data imported to post ', ' (' . $debug . ').<br/>', $post_id );
-
-			clean_post_cache( $post_id );
-
-			ob_flush();
-
+	public static function do_url( $header, $data, $post_id ) {
+		if ( 'yes' !== filter_input( INPUT_POST, 'do_' . self::URL ) ) {
+			return;
 		}
 
-		fclose( $handle );
+		$value = $header->get_field_value( Field_Names::URL, $data );
+		if ( empty( $value ) ) {
+			return;
+		}
+
+		echo( "Setting URL $value for post $post_id...<br/>" );
+		self::add_post_meta( $post_id, Wordlift_Schema_Url_Property_Service::META_KEY, $value );
+	}
+
+	public static function do_title( $header, $data, $post_id ) {
+		if ( 'yes' !== filter_input( INPUT_POST, 'do_' . self::TITLE ) ) {
+			return;
+		}
+
+		$value = $header->get_field_value( Field_Names::TITLE, $data );
+		if ( empty( $value ) ) {
+			return;
+		}
+
+		wp_update_post( array(
+			'ID'         => $post_id,
+			'post_title' => $value,
+		) );
 
 	}
 
-	private function add_post_meta( $post_id, $meta_key, $meta_value ) {
+	public static function do_same_as( $header, $data, $post_id ) {
+		if ( 'yes' !== filter_input( INPUT_POST, 'do_' . self::SAME_AS ) ) {
+			return;
+		}
 
-		if ( empty( $meta_value ) || in_array( $meta_value, get_post_meta( $post_id, $meta_key ) ) ) {
+		// same as.
+		$same_as = $header->get_field_value( Field_Names::SAME_AS, $data );
+		if ( empty( $same_as ) ) {
+			return;
+		}
+
+		$values = explode( ', ', $same_as );
+		foreach ( $values as $value ) {
+			self::add_post_meta( $post_id, Wordlift_Schema_Service::FIELD_SAME_AS, $value );
+		}
+
+	}
+
+	public static function do_alt_labels( $header, $data, $post_id ) {
+		if ( 'yes' !== filter_input( INPUT_POST, 'do_' . self::ALT_LABELS ) ) {
+			return;
+		}
+
+		$alt_labels = $header->get_field_value( Field_Names::ALT_LABELS, $data );
+		if ( empty( $alt_labels ) ) {
+			return;
+		}
+		$values = explode( ', ', $alt_labels );
+		foreach ( $values as $value ) {
+			self::add_post_meta( $post_id, Wordlift_Entity_Service::ALTERNATIVE_LABEL_META_KEY, $value );
+		}
+	}
+
+	public static function do_thumbnails( $header, $data, $post_id ) {
+		if ( 'yes' !== filter_input( INPUT_POST, 'do_' . self::THUMBNAILS ) ) {
+			return;
+		}
+
+		$thumbnails = $header->get_field_value( Field_Names::THUMBNAILS, $data );
+		if ( empty( $thumbnails ) ) {
+			return;
+		}
+		$values = explode( ', ', $thumbnails );
+		foreach ( $values as $value ) {
+			self::set_post_image_from_url( $value, $post_id, 'yes' === filter_input( INPUT_POST, 'force_thumbnails' ) );
+		}
+	}
+
+	public static function do_post_content( $header, $data, $post_id ) {
+		if ( 'yes' !== filter_input( INPUT_POST, 'do_' . self::POST_CONTENT ) ) {
+			return;
+		}
+
+		$post_content = $header->get_field_value( Field_Names::POST_CONTENT, $data );
+		if ( empty( $post_content ) ) {
+			return;
+		}
+		wp_update_post( array(
+			'ID'           => $post_id,
+			'post_content' => $post_content,
+		) );
+	}
+
+
+	private static function add_post_meta( $post_id, $meta_key, $meta_value ) {
+
+		if ( empty( $meta_value )
+		     || ( false !== get_post_meta( $post_id, $meta_key )
+		          && in_array( $meta_value, get_post_meta( $post_id, $meta_key ) ) ) ) {
 			return false;
 		}
 
 		return add_post_meta( $post_id, $meta_key, $meta_value );
 	}
 
-	private function set_post_image_from_url( $url, $post_id, $force = false ) {
+	private static function set_post_image_from_url( $url, $post_id, $force = false ) {
 
 		if ( ! $force && ! empty( get_post_thumbnail_id( $post_id ) ) ) {
 			return false;
@@ -164,6 +193,170 @@ class Wordlift_Importer_Admin_Ajax_Import {
 		// Set it as the featured image.
 		set_post_thumbnail( $post_id, $attachment_id );
 
+	}
+
+}
+
+/**
+ *
+ *
+ * @since 1.2.0
+ */
+class Wordlift_Importer_Header {
+
+	private $fields;
+
+	public function __construct( $fields ) {
+
+		$this->fields = array_flip( $fields );
+
+	}
+
+	public function has_field( $field ) {
+
+		return isset( $this->fields[ $field ] );
+	}
+
+	public function get_field_index( $field ) {
+
+		return isset( $this->fields[ $field ] ) ? $this->fields[ $field ] : - 1;
+	}
+
+	public function get_field_value( $field, $data ) {
+
+		if ( ! $this->has_field( $field ) ) {
+			return null;
+		}
+
+		$index = $this->get_field_index( $field );
+
+		return $data[ $index ];
+	}
+
+}
+
+class Wordlift_Importer_Admin_Ajax_Import {
+
+	public function process() {
+
+		@set_time_limit( 3600 );
+
+		// Start sending some data.
+		echo( 'starting...<br/>' );
+		ob_flush();
+
+		if ( false === ( $handle = fopen( $_FILES['file']['tmp_name'], 'r' ) ) ) {
+			wp_send_json_error( 'Cannot open the file.' );
+		}
+
+		/*
+		 * Get the fields from the header.
+		 *
+		 * @see https://github.com/wordlift/wordlift-importer/issues/2
+		 * @since 1.2.0
+		 */
+		$header_fields = fgetcsv( $handle, 0, "\t" );
+		// Bail out if we can't determine the fields from the header.
+		if ( false === $header_fields ) {
+			wp_send_json_error( 'Cannot get the fields from the header.' );
+		}
+
+		// Create an instance of the `Wordlift_Importer_Header` class.
+		$header = new Wordlift_Importer_Header( $header_fields );
+		if ( ! $header->has_field( Field_Names::PERMALINK ) &&
+		     ! $header->has_field( Field_Names::TITLE ) ) {
+
+			wp_send_json_error( 'The title field is required when the permalink isn`t provided.' );
+		}
+
+		while ( false !== ( $data = fgetcsv( $handle, 0, "\t" ) ) ) {
+
+			$debug = '';
+
+			try {
+				// Create new posts when the permalink field isn't found.
+				$post_id = $this->get_or_create_post( $header, $data );
+			} catch ( Exception $e ) {
+				echo( $e->getMessage() . '<br/>' );
+				continue;
+			}
+
+			foreach ( Field_Names::$fields as $field_name => $field_callback ) {
+				call_user_func( array( 'Field_Names', $field_callback ), $header, $data, $post_id );
+			}
+
+			edit_post_link( $post_id, 'Data imported to post ', ' (' . $debug . ').<br/>', $post_id );
+
+			clean_post_cache( $post_id );
+
+			ob_flush();
+
+		}
+
+		fclose( $handle );
+
+	}
+
+	/**
+	 * Get the post ID for the specified data.
+	 *
+	 * If the header contains a `permalink` field, the function will look for a matching post. If not found it'll
+	 * throw an exception.
+	 *
+	 * If the header doesn't contain a `permalink` field then the `title` field is required (an exception is thrown if
+	 * not provided) and a new post is created with the `title`.
+	 *
+	 * @param Wordlift_Importer_Header $header A {@link Wordlift_Importer_Header} instance to get the field data.
+	 * @param array                    $data An array of fields' data.
+	 *
+	 * @return int|WP_Error The post ID on success. The value 0 or WP_Error on failure.
+	 * @throws Exception
+	 *
+	 * @since 1.2.0
+	 */
+	private function get_or_create_post( $header, $data ) {
+
+		// If the permalink field hasn't been provided, or is empty, create a new post.
+		$permalink = $header->get_field_value( Field_Names::PERMALINK, $data );
+		if ( empty( $permalink ) ) {
+
+			// Check that the title field has been provided and has a value.
+			$title = $header->get_field_value( Field_Names::TITLE, $data );
+			if ( empty( $title ) ) {
+				throw new Exception( 'The title field is required when the permalink isn`t provided.' );
+			}
+
+			// Create an entity with the specified title.
+			$post_id = wp_insert_post( array(
+				'post_type'   => Wordlift_Entity_Service::TYPE_NAME,
+				'post_title'  => $title,
+				'post_status' => 'publish',
+			) );
+
+			echo( "$post_id created.<br/>" );
+
+			return $post_id;
+		}
+
+		// Check that the permalink is valid.
+		if ( strpos( $permalink, 'http' ) ) {
+			throw new Exception( $permalink . ' not a valid URL.<br/>' );
+		}
+
+		// Remove the host.
+		$path = preg_replace( '~^https?://[^/]+~', '', $permalink, 1 );
+		$url  = home_url( $path );
+
+		// Try to find the post.
+		$post_id = url_to_postid( $url );
+
+		// Throw an exception if the post is not found.
+		if ( 0 === $post_id ) {
+			throw new Exception( "$permalink not found.<br/>" );
+		}
+
+		// Finally return a post id.
+		return $post_id;
 	}
 
 }

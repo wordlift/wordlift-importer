@@ -30,9 +30,15 @@ wp_enqueue_script( 'plupload' );
 <label><?php echo esc_html( __( 'Thumbnails', 'wordlift-importer' ) ); ?>
     <input type="checkbox" value="yes" checked="checked" name="do_thumbnails" id="do_thumbnails"></label>
 <label><?php echo esc_html( __( 'Content', 'wordlift-importer' ) ); ?>
-    <input type="checkbox" value="yes" checked="checked" name="do_content" id="do_content"></label>
+    <input type="checkbox" value="yes" checked="checked" name="do_post_content" id="do_post_content"></label>
 <label><?php echo esc_html( __( 'Overwrite Thumbnails', 'wordlift-importer' ) ); ?>
     <input type="checkbox" value="yes" name="force_thumbnails" id="force_thumbnails"></label>
+<label><?php echo esc_html( __( 'Title', 'wordlift-importer' ) ); ?>
+    <input type="checkbox" value="yes" checked="checked" name="do_title" id="do_title"></label>
+<label><?php echo esc_html( __( 'URL', 'wordlift-importer' ) ); ?>
+    <input type="checkbox" value="yes" checked="checked" name="do_url" id="do_url"></label>
+<label><?php echo esc_html( __( 'Type', 'wordlift-importer' ) ); ?>
+    <input type="checkbox" value="yes" checked="checked" name="do_type" id="do_type"></label>
 
 <div style="width: 100%;">
     <div id="progress" style="background: blue; width: 0; height: 10px;"></div>
@@ -76,8 +82,11 @@ wp_enqueue_script( 'plupload' );
         do_same_as: checkedValue('do_same_as'),
         do_alt_labels: checkedValue('do_alt_labels'),
         do_thumbnails: checkedValue('do_thumbnails'),
-        do_content: checkedValue('do_content'),
-        force_thumbnails: checkedValue('force_thumbnails')
+        do_post_content: checkedValue('do_post_content'),
+        force_thumbnails: checkedValue('force_thumbnails'),
+        do_title: checkedValue('do_title'),
+        do_url: checkedValue('do_url'),
+        do_type: checkedValue('do_type')
       })
       uploader.start()
     }
