@@ -16,7 +16,7 @@ class Wordlift_Importer_SameAs_Importer {
 
 		register_importer(
 			'wl_importer_using_sameas',
-			__( 'WordLift Importer (using sameAs).', 'wordlift-importer' ),
+			__( 'WordLift Importer (using sameAs)', 'wordlift-importer' ),
 			__( 'Merge data using the `sameAs`field.', 'wordlift-importer' ),
 			array( $this, 'callback', )
 		);
