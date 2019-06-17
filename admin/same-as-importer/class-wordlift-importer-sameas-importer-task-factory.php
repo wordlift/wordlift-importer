@@ -24,31 +24,59 @@ class Wordlift_Importer_SameAs_Importer_Task_Factory {
 		return new Wordlift_Importer_SameAs_Importer_Task( $filename, array(
 			function ( $item, $header ) {
 
-				$configuration_service = new Wordlift_Configuration_Service();
-				$entity_service = new Wordlift_Entity_Uri_Service($configuration_service);
-
 				if($item){
 
 					foreach ($item as $key => $value){
-						$record[$header[$key][1]] = $value;
+						$record[$header[$key][0].':'.$header[$key][1]] = $value;
 					}
 
-					$entity = $entity_service->get_entity($record['same_as']);
+					/*
+					 * Recognized keys for import:
+					 *
+					 * wordpress:post_title
+					 * wordlift:same_as
+					 * wordlift:type
+					 * wordlift:url
+					 * wordlift:alt_label
+					 * acf:<field_name>
+					 *
+					 */
+
+					$entity = Wordlift_Entity_Service::get_instance()->get_entity_post_by_uri( $record['wordlift:same_as'] );
 
 					if(is_null($entity)){
-						//var_dump( $record );
 
-						// Create an entity with the specified title, set type, same_as meta
+						// Create an entity with the specified title, same_as meta
 						$post_id = wp_insert_post( array(
 							'post_type'   => Wordlift_Entity_Service::TYPE_NAME,
-							'post_title'  => $record['title'],
-							'post_status' => 'publish',
+							'post_title'  => $record['wordpress:post_title'],
+							'post_status' => 'publish'
 						) );
-						Wordlift_Entity_Type_Service::get_instance()->set( $post_id, $record['type'] );
-						add_post_meta( $post_id, Wordlift_Schema_Service::FIELD_SAME_AS, $record['same_as'] );
+
+						add_post_meta( $post_id, Wordlift_Schema_Service::FIELD_SAME_AS, $record['wordlift:same_as'] );
+
+						printf( 'Inserting %s as %s ID:%s', $record['wordlift:same_as'], Wordlift_Entity_Service::TYPE_NAME, $post_id );
+						echo PHP_EOL;
 					} else {
-						// Confirm do nothing?
+						$post_id = $entity->ID;
+
+						// Update title
+						wp_update_post( array(
+							'ID'          => $post_id,
+							'post_title'  => $record['wordpress:post_title']
+						) );
+
+						printf( 'Updating %s in %s ID:%s', $record['wordlift:same_as'], Wordlift_Entity_Service::TYPE_NAME, $post_id );
+						echo PHP_EOL;
 					}
+
+					// Common tasks: Set type, alt_label
+					Wordlift_Entity_Type_Service::get_instance()->set( $post_id, $record['wordlift:type'] );
+					if ( isset($record['wordlift:alt_label']) ) {
+						add_post_meta( $post_id, Wordlift_Entity_Service::ALTERNATIVE_LABEL_META_KEY, $record['wordlift:alt_label'] );
+					}
+					// TODO implement acf:<field_name>
+
 				}
 
 			},
