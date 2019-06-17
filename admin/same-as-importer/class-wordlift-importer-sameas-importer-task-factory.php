@@ -38,7 +38,6 @@ class Wordlift_Importer_SameAs_Importer_Task_Factory {
 					 * wordlift:type
 					 * wordlift:url
 					 * wordlift:alt_label
-					 * acf:<field_name>
 					 *
 					 */
 
@@ -46,7 +45,12 @@ class Wordlift_Importer_SameAs_Importer_Task_Factory {
 
 					if(is_null($entity)){
 
-						// Create an entity with the specified title, same_as meta
+						/*
+						 * Create an entity with:
+						 * ----------------------
+						 * 1. wordpress:post_title
+						 * 2. wordlift:same_as
+						 */
 						$post_id = wp_insert_post( array(
 							'post_type'   => Wordlift_Entity_Service::TYPE_NAME,
 							'post_title'  => $record['wordpress:post_title'],
@@ -60,7 +64,11 @@ class Wordlift_Importer_SameAs_Importer_Task_Factory {
 					} else {
 						$post_id = $entity->ID;
 
-						// Update title
+						/*
+						 * Update entity with:
+						 * ----------------------
+						 * 1. wordpress:post_title
+						 */
 						wp_update_post( array(
 							'ID'          => $post_id,
 							'post_title'  => $record['wordpress:post_title']
@@ -70,11 +78,28 @@ class Wordlift_Importer_SameAs_Importer_Task_Factory {
 						echo PHP_EOL;
 					}
 
-					// Common tasks: Set type, alt_label
+					/*
+					 * Common tasks:
+					 * -------------
+					 * 1. wordlift:type
+					 * 2. wordlift:alt_label
+					 * 3. wordlift:url
+					 */
 					Wordlift_Entity_Type_Service::get_instance()->set( $post_id, $record['wordlift:type'] );
+
+					// Conditionally add alt_label (can be multiple)
 					if ( isset($record['wordlift:alt_label']) ) {
-						add_post_meta( $post_id, Wordlift_Entity_Service::ALTERNATIVE_LABEL_META_KEY, $record['wordlift:alt_label'] );
+						$alt_label = get_post_meta( $post_id, Wordlift_Entity_Service::ALTERNATIVE_LABEL_META_KEY);
+						if( !in_array($record['wordlift:alt_label'], $alt_label) ){
+							update_post_meta( $post_id, Wordlift_Entity_Service::ALTERNATIVE_LABEL_META_KEY, $record['wordlift:alt_label'] );
+						}
 					}
+
+					// Upsert entity_url (singleton)
+					if ( isset($record['wordlift:url']) ) {
+						update_post_meta( $post_id, WL_ENTITY_URL_META_NAME, $record['wordlift:url'] );
+					}
+
 					// TODO implement acf:<field_name>
 
 				}
