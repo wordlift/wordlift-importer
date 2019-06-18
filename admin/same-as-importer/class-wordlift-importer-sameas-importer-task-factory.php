@@ -91,13 +91,16 @@ class Wordlift_Importer_SameAs_Importer_Task_Factory {
 					if ( isset($record['wordlift:alt_label']) ) {
 						$alt_label = get_post_meta( $post_id, Wordlift_Entity_Service::ALTERNATIVE_LABEL_META_KEY);
 						if( !in_array($record['wordlift:alt_label'], $alt_label) ){
-							update_post_meta( $post_id, Wordlift_Entity_Service::ALTERNATIVE_LABEL_META_KEY, $record['wordlift:alt_label'] );
+							add_post_meta( $post_id, Wordlift_Entity_Service::ALTERNATIVE_LABEL_META_KEY, $record['wordlift:alt_label'] );
 						}
 					}
 
-					// Upsert entity_url (singleton)
+					// Conditionally add url (can be multiple)
 					if ( isset($record['wordlift:url']) ) {
-						update_post_meta( $post_id, WL_ENTITY_URL_META_NAME, $record['wordlift:url'] );
+						$url = get_post_meta( $post_id, Wordlift_Schema_Url_Property_Service::META_KEY);
+						if( !in_array($record['wordlift:url'], $url) ){
+							add_post_meta( $post_id, Wordlift_Schema_Url_Property_Service::META_KEY, $record['wordlift:url'] );
+						}
 					}
 
 					// TODO implement acf:<field_name>
