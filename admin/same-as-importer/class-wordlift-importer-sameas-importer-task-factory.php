@@ -100,7 +100,8 @@ class Wordlift_Importer_SameAs_Importer_Task_Factory {
 					 * 2. wordlift:alt_label
 					 * 3. wordlift:url
 					 */
-					Wordlift_Entity_Type_Service::get_instance()->set( $post_id, $record['wordlift:type'] || 'http://schema.org/Thing' );
+					$type_array = explode(",", $record['wordlift:type']);
+					Wordlift_Entity_Type_Service::get_instance()->set( $post_id, trim($type_array[0]) || 'http://schema.org/Thing' );
 
 					// Conditionally add alt_label (can be multiple)
 					if ( isset($record['wordlift:alt_label']) && !empty(trim($record['wordlift:alt_label'])) ) {
