@@ -112,6 +112,11 @@ class Wordlift_Importer_SameAs_Importer_Task_Factory {
 
 					// Conditionally add url (can be multiple)
 					if ( isset($record['wordlift:url']) && !empty(trim($record['wordlift:url'])) ) {
+
+						if(substr( $record['wordlift:url'], 0, 4 ) !== "http"){
+							$record['wordlift:url'] = site_url($record['wordlift:url']);
+						}
+
 						$url = get_post_meta( $post_id, Wordlift_Schema_Url_Property_Service::META_KEY);
 						if( !in_array($record['wordlift:url'], $url) ){
 							add_post_meta( $post_id, Wordlift_Schema_Url_Property_Service::META_KEY, $record['wordlift:url'] );
