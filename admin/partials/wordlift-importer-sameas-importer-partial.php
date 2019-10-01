@@ -10,6 +10,9 @@
         <li>wordlift:alt_label</li>
     </ol>
 
+    <hr />
+    <p>Browse a valid CSV with above headers to initiate import.</p>
+
     <ul id="filelist"></ul>
 
     <div id="container">
