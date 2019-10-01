@@ -141,7 +141,7 @@ class Wordlift_Importer_SameAs_Importer_Task_Factory {
 		$uri_array = explode(",",$uris);
 
 		foreach ($uri_array as $uri) {
-			$entity = Wordlift_Entity_Service::get_instance()->get_entity_post_by_uri( $uri );
+			$entity = Wordlift_Entity_Service::get_instance()->get_entity_post_by_uri( trim($uri) );
 			if(!is_null($entity)) return $entity;
 		}
 
