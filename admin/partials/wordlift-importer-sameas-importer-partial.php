@@ -1,5 +1,15 @@
 <div class="wrap">
     <h1>WordLift Importer (using sameAs)</h1>
+
+    <p>Recognized headers for CSV import</p>
+    <ol>
+        <li>wordpress:post_title</li>
+        <li>wordlift:same_as</li>
+        <li>wordlift:type</li>
+        <li>wordlift:url</li>
+        <li>wordlift:alt_label</li>
+    </ol>
+
     <ul id="filelist"></ul>
 
     <div id="container">
