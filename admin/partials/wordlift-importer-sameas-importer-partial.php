@@ -12,7 +12,7 @@
     </ol>
 
     <hr />
-    <p>Browse a valid CSV with above headers to initiate import.</p>
+    <p>Browse a valid tab separated file with above headers to initiate import.</p>
 
     <ul id="filelist"></ul>
 
