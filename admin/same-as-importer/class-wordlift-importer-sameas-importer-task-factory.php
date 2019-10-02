@@ -43,6 +43,7 @@ class Wordlift_Importer_SameAs_Importer_Task_Factory {
 
 					$same_as_uris = $record['wordlift:same_as'];
 					$entity = self::get_entity( $same_as_uris );
+					$post_content = (isset($record['wordpress:post_content']) && !empty($record['wordpress:post_content'])) ? $record['wordpress:post_content'] : '';
 
 					if(is_null($entity)){
 
@@ -57,7 +58,8 @@ class Wordlift_Importer_SameAs_Importer_Task_Factory {
 							$post_id = wp_insert_post( array(
 								'post_type'   => Wordlift_Entity_Service::TYPE_NAME,
 								'post_title'  => $record['wordpress:post_title'],
-								'post_status' => 'publish'
+								'post_status' => 'publish',
+								'post_content'  => $post_content
 							) );
 
 							if(!empty($same_as_uris)){
@@ -84,7 +86,8 @@ class Wordlift_Importer_SameAs_Importer_Task_Factory {
 							 */
 							wp_update_post( array(
 								'ID'         => $post_id,
-								'post_title' => $record['wordpress:post_title']
+								'post_title' => $record['wordpress:post_title'],
+								'post_content'  => $post_content
 							) );
 
 							printf( 'Updating %s in %s ID:%s', $record['wordlift:same_as'], Wordlift_Entity_Service::TYPE_NAME, $post_id );

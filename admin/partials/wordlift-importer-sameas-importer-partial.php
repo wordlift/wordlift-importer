@@ -1,9 +1,10 @@
 <div class="wrap">
     <h1>WordLift Importer (using sameAs)</h1>
 
-    <p>Recognized headers for CSV import</p>
+    <p>Recognized headers for data import (tab separated file)</p>
     <ol>
         <li>wordpress:post_title</li>
+        <li>wordpress:post_content</li>
         <li>wordlift:same_as</li>
         <li>wordlift:type</li>
         <li>wordlift:url</li>
