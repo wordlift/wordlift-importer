@@ -70,7 +70,7 @@ class Wordlift_Importer {
 		if ( defined( 'WORDLIFT_IMPORTER_VERSION' ) ) {
 			$this->version = WORDLIFT_IMPORTER_VERSION;
 		} else {
-			$this->version = '1.3.0-dev';
+			$this->version = '1.3.0';
 		}
 		$this->plugin_name = 'wordlift-importer';
 
