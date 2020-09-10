@@ -110,9 +110,12 @@ class Wordlift_Importer_SameAs_Importer_Task_Factory {
 
 					// Conditionally add alt_label (can be multiple)
 					if ( isset($record['wordlift:alt_label']) && !empty(trim($record['wordlift:alt_label'])) ) {
-						$alt_label = get_post_meta( $post_id, Wordlift_Entity_Service::ALTERNATIVE_LABEL_META_KEY);
-						if( !in_array($record['wordlift:alt_label'], $alt_label) ){
-							add_post_meta( $post_id, Wordlift_Entity_Service::ALTERNATIVE_LABEL_META_KEY, $record['wordlift:alt_label'] );
+						$alt_labels_existing = get_post_meta( $post_id, Wordlift_Entity_Service::ALTERNATIVE_LABEL_META_KEY);
+						$alt_labels_insert_array = explode(",", trim($record['wordlift:alt_label']));
+						foreach ($alt_labels_insert_array as $alt_labels_insert){
+							if( !in_array($alt_labels_insert, $alt_labels_existing) ){
+								add_post_meta( $post_id, Wordlift_Entity_Service::ALTERNATIVE_LABEL_META_KEY, $alt_labels_insert );
+							}
 						}
 					}
 
